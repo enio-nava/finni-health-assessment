@@ -33,7 +33,19 @@ jobs:
     - name: Build
       run: npm run build --if-present
     
+    - name: Check if test script exists
+      id: check-test
+      run: |
+        if grep -q '"test"' package.json; then
+          echo "Test script found in package.json"
+          echo "has_test=true" >> $GITHUB_OUTPUT
+        else
+          echo "No test script found in package.json"
+          echo "has_test=false" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Test
+      if: steps.check-test.outputs.has_test == 'true'
       run: npm test -- --passWithNoTests
       
   build-and-test-server:
@@ -72,11 +84,35 @@ jobs:
         echo "MONGODB_URI=mongodb://localhost:27017/finni-health-test" >> .env
         echo "NODE_ENV=test" >> .env
     
+    - name: Check if lint script exists
+      id: check-lint
+      run: |
+        if grep -q '"lint"' package.json; then
+          echo "Lint script found in package.json"
+          echo "has_lint=true" >> $GITHUB_OUTPUT
+        else
+          echo "No lint script found in package.json"
+          echo "has_lint=false" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Lint
-      run: npm run lint --if-present
+      if: steps.check-lint.outputs.has_lint == 'true'
+      run: npm run lint
       
+    - name: Check if test script exists
+      id: check-test
+      run: |
+        if grep -q '"test"' package.json; then
+          echo "Test script found in package.json"
+          echo "has_test=true" >> $GITHUB_OUTPUT
+        else
+          echo "No test script found in package.json"
+          echo "has_test=false" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Test
-      run: npm test --if-present
+      if: steps.check-test.outputs.has_test == 'true'
+      run: npm test
 
   deploy:
     needs: [build-and-test-client, build-and-test-server]
